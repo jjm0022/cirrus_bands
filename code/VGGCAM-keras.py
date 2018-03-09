@@ -59,7 +59,13 @@ def VGGCAM(nb_classes, num_input_channels=1024):
     model.add(Convolution2D(512, 3, 3, activation='relu'))
 
     # Add another conv layer with ReLU + GAP
-    model.add(Convolution2D(num_input_channels, 3, 3, activation='relu', border_mode="same"))
+    model.add(
+        Convolution2D(
+            num_input_channels,
+            3,
+            3,
+            activation='relu',
+            border_mode="same"))
     model.add(AveragePooling2D((14, 14)))
     model.add(Flatten())
     # Add the W layer
@@ -74,11 +80,11 @@ def get_classmap(model, X, nb_classes, batch_size, num_input_channels, ratio):
 
     inc = model.layers[0].input
     conv6 = model.layers[-4].output
-    conv6_resized = absconv.bilinear_upsampling(conv6, ratio,
-                                                batch_size=batch_size,
-                                                num_input_channels=num_input_channels)
+    conv6_resized = absconv.bilinear_upsampling(
+        conv6, ratio, batch_size=batch_size, num_input_channels=num_input_channels)
     WT = model.layers[-1].W.T
-    conv6_resized = K.reshape(conv6_resized, (-1, num_input_channels, 224 * 224))
+    conv6_resized = K.reshape(
+        conv6_resized, (-1, num_input_channels, 224 * 224))
     classmap = K.dot(WT, conv6_resized).reshape((-1, nb_classes, 224, 224))
     get_cmap = K.function([inc], classmap)
     return get_cmap([X])
@@ -102,7 +108,8 @@ def train_VGGCAM(VGG_weight_path, nb_classes, num_input_channels=1024):
     with h5py.File(VGG_weight_path) as hw:
         for k in range(hw.attrs['nb_layers']):
             g = hw['layer_{}'.format(k)]
-            weights = [g['param_{}'.format(p)] for p in range(g.attrs['nb_params'])]
+            weights = [g['param_{}'.format(p)]
+                       for p in range(g.attrs['nb_params'])]
             model.layers[k].set_weights(weights)
             if model.layers[k].name == "convolution2d_13":
                 break
@@ -154,10 +161,10 @@ def plot_classmap(VGGCAM_weight_path, img_path, label,
     # Get a copy of the original image
     im_ori = im.copy().astype(np.uint8)
     # VGG model normalisations
-    im[:,:,0] -= 103.939
-    im[:,:,1] -= 116.779
-    im[:,:,2] -= 123.68
-    im = im.transpose((2,0,1))
+    im[:, :, 0] -= 103.939
+    im[:, :, 1] -= 116.779
+    im[:, :, 2] -= 123.68
+    im = im.transpose((2, 0, 1))
 
     batch_size = 1
     classmap = get_classmap(model,

@@ -45,19 +45,19 @@ def classify(model,
              verbose=0,
              copy=False):
     '''
-    Takes a compiled model and directory of images and either returns a text 
+    Takes a compiled model and directory of images and either returns a text
       file of the bands images or copys them to a new folder.
     destination: Directory where bands images will be copied if copy is True.
     text: path where text file will be saved for classified images.
     copy: Boolean. If True, it will copy bands images to the destination directory.
     '''
 
-    datagen = ImageDataGenerator(rescale=1/255.)
+    datagen = ImageDataGenerator(rescale=1 / 255.)
     gen = datagen.flow_from_directory(
-            directory =  directory,
-            target_size = (256, 256),
-            batch_size = 32, 
-            shuffle = False)
+        directory=directory,
+        target_size=(256, 256),
+        batch_size=32,
+        shuffle=False)
 
     ind = 0
     done = False
@@ -68,11 +68,18 @@ def classify(model,
     day = gen.directory.split('/')[-1]
     batchSize = factor(len(images))
 
-    bar = progressbar.ProgressBar(redirect_stdout=True, max_value=(gen.N / gen.batch_size),
+    bar = progressbar.ProgressBar(
+        redirect_stdout=True,
+        max_value=(
+            gen.N / gen.batch_size),
         widgets=[
-            progressbar.Percentage(), ' ',
-            '(', progressbar.SimpleProgress(), ')',
-            ' Batch Size: {0}'.format(gen.batch_size),
+            progressbar.Percentage(),
+            ' ',
+            '(',
+            progressbar.SimpleProgress(),
+            ')',
+            ' Batch Size: {0}'.format(
+                gen.batch_size),
             progressbar.Bar(),
             'Month: {0} '.format(month),
             'Day: {0} '.format(day),
@@ -81,8 +88,8 @@ def classify(model,
     i = 0
     for batch in gen:
         predictions = model.predict_classes(batch[0],
-                            batch_size=gen.batch_size,
-                            verbose=0)
+                                            batch_size=gen.batch_size,
+                                            verbose=0)
         for pred in predictions:
             if pred[0] == 0:
                 band_files.append(images[ind])
@@ -102,7 +109,7 @@ def classify(model,
     day = images.split('/')[-1]
     batchSize = factor(len(images))
 
-    gen = Img_Iterator()    
+    gen = Img_Iterator()
     stream = gen.flow_from_directory(images, batch_size=batchSize)
     i = 0
     j = []
@@ -148,6 +155,7 @@ def classify(model,
     return band_files
     '''
 
+
 def write2txt(bandPaths):
     '''
     '''
@@ -170,7 +178,7 @@ def main():
                   metrics=['accuracy'])
     base_dir = '/media/jmiller/ubuntuStorage/thesis_images/2015'
 
-    datagen = ImageDataGenerator(rescale=1/255.)
+    datagen = ImageDataGenerator(rescale=1 / 255.)
 
     predictions = {}
     for month in sorted(os.listdir(base_dir)):
@@ -179,14 +187,11 @@ def main():
         for day in sorted(os.listdir(month_dir)):
             day_dir = os.path.join(month_dir, day)
             predictions[month][day] = classify(model, day_dir)
-        #write2txt(predictions)
+        # write2txt(predictions)
 
     with open('./predicted_bands_2014_.json', 'w') as j:
-    	json.dump(predictions, j, indent=2, sort_keys=True)
-
-
+        json.dump(predictions, j, indent=2, sort_keys=True)
 
 
 if __name__ == '__main__':
     main()
-

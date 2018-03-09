@@ -12,7 +12,6 @@ from keras import backend as K
 from keras.models import model_from_json
 
 
-
 # dimensions of the generated pictures for each filter.
 img_width = 256
 img_height = 256
@@ -41,17 +40,19 @@ def deprocess_image(x):
     x = np.clip(x, 0, 255).astype('uint8')
     return x
 
-home=os.environ['HOME']
-json_path =home+'/Dropbox/cnn_stuff/models/020117/020117-1203/model_ftil_25_020117-1203.json'
-weights_path=home+'/Dropbox/cnn_stuff/models/020117/020117-1203/transVGG.hdf5'
 
-model = model_from_json(open(json_path,'r').read())
+home = os.environ['HOME']
+json_path = home + \
+    '/Dropbox/cnn_stuff/models/020117/020117-1203/model_ftil_25_020117-1203.json'
+weights_path = home + '/Dropbox/cnn_stuff/models/020117/020117-1203/transVGG.hdf5'
+
+model = model_from_json(open(json_path, 'r').read())
 model.load_weights(weights_path)
 
-            
+
 model.compile(optimizer='SGD',
-            loss='categorical_crossentropy',
-            metrics=['accuracy'])
+              loss='categorical_crossentropy',
+              metrics=['accuracy'])
 
 # build the VGG16 network with ImageNet weights
 #model = vgg16.VGG16(weights='imagenet', include_top=False)
@@ -66,6 +67,8 @@ input_img = model.input
 layer_dict = dict([(layer.name, layer) for layer in model.layers[1:]])
 
 print(layer_dict)
+
+
 def normalize(x):
     # utility function to normalize a tensor by its L2 norm
     return x / (K.sqrt(K.mean(K.square(x))) + 1e-5)
@@ -141,8 +144,17 @@ stitched_filters = np.zeros((width, height, 3))
 for i in range(n):
     for j in range(n):
         img, loss = kept_filters[i * n + j]
-        stitched_filters[(img_width + margin) * i: (img_width + margin) * i + img_width,
-                         (img_height + margin) * j: (img_height + margin) * j + img_height, :] = img
+        stitched_filters[(img_width +
+                          margin) *
+                         i: (img_width +
+                             margin) *
+                         i +
+                         img_width, (img_height +
+                                     margin) *
+                         j: (img_height +
+                             margin) *
+                         j +
+                         img_height, :] = img
 
 # save the result to disk
 imsave('stitched_filters_%dx%d.png' % (n, n), stitched_filters)

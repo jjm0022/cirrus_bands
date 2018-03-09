@@ -11,6 +11,7 @@ import progressbar
 import json
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
+from functools import reduce
 
 
 def img_to_array(img):
@@ -33,11 +34,12 @@ def load_img(path, target_size=(256, 256)):
     return img
 
 
-def factor(n, max_=50):    
+def factor(n, max_=50):
     '''
     Takes number and returns the highest factor that is less than max_.
     '''
-    factors = sorted(reduce(list.__add__, ([i, n // i] for i in range(1, int(n**0.5) + 1) if n % i == 0)))
+    factors = sorted(reduce(
+        list.__add__, ([i, n // i] for i in range(1, int(n**0.5) + 1) if n % i == 0)))
     tmp = 1
     for item in factors:
         if item > tmp and item < max_:
@@ -51,7 +53,8 @@ def batch_infer(model, images_path, labels):
     imgs_num = sum([len(imgs) for _, _, imgs in os.walk(images_path) is imgs])
     batch_size = factor(imgs_num)
     generator = ImageDataGenerator()
-    data_generator = generator.flow_from_directory(images_path, batch_size=batch_size, shuffle=False)
+    data_generator = generator.flow_from_directory(
+        images_path, batch_size=batch_size, shuffle=False)
     num_correct = 0
     correct = 0
     for batch in data_generator:

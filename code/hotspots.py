@@ -36,12 +36,13 @@ def get_spot(row, col, file_dict, new_dir):
                 if row_ == row and col_ == col:
                     total_ += 1
                     month_ += 1
-                    f_tmp = os.path.join('/'.join(f.split('/')[:-2]), day, day, fName)
+                    f_tmp = os.path.join(
+                        '/'.join(f.split('/')[:-2]), day, day, fName)
                     #f_tmp = os.path.join('/media/jmiller/ubuntuStorage/thesis_images/2013', month, day, day, fName)
                     print(f_tmp)
                     print(os.path.exists(f_tmp))
                     shutil.copyfile(f_tmp, os.path.join(new_path, fName))
-        stats[month]['total'] = month_ 
+        stats[month]['total'] = month_
     stats['total'] = total_
 
     largest_month = []
@@ -58,19 +59,21 @@ def get_spot(row, col, file_dict, new_dir):
                 largest_month = [m]
             else:
                 continue
-        except:
+        except BaseException:
             continue
 
     print('{0} total images found.'.format(total_))
     for m in largest_month:
-        print('Month with the most images: {0} with {1} images'.format(months[m], m_tmp))
+        print(
+            'Month with the most images: {0} with {1} images'.format(
+                months[m], m_tmp))
 
 
 def getLatLon(row, col):
     '''
     '''
-    parallels=np.linspace(90.,-81.,20)
-    meridians=np.arange(-180.,180,9)
+    parallels = np.linspace(90., -81., 20)
+    meridians = np.arange(-180., 180, 9)
 
     lat = parallels[int(row)] - 4.5
     lon = meridians[int(col)] + 4.5
@@ -114,7 +117,12 @@ def findHotSpots(self, dic, bounds):
                 col = img.split('_')[7].split('.')[0]
                 lat, lon = self.getLatLon(row, col)
                 if self.withinArea(lat, lon, bounds):
-                    new_path = '/home/jmiller/Desktop/{0}/images/{1}_{2}_{3}_{4}'.format(self.year, str(bounds[0]), str(bounds[1]), str(bounds[2]), str(bounds[3]))
+                    new_path = '/home/jmiller/Desktop/{0}/images/{1}_{2}_{3}_{4}'.format(
+                        self.year, str(
+                            bounds[0]), str(
+                            bounds[1]), str(
+                            bounds[2]), str(
+                            bounds[3]))
                     if not os.path.exists(new_path):
                         os.makedirs(new_path)
                     shutil.copyfile(path, os.path.join(new_path, img))
@@ -125,7 +133,7 @@ def main():
     '''
     json_path = './predicted_bands_2014.json'
     with open(json_path, 'r') as j:
-            file_dict = json.load(j)
+        file_dict = json.load(j)
     get_spot(15, 12, file_dict, '/home/jmiller/Desktop/hotspots/')
 
 

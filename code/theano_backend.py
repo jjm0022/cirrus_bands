@@ -27,7 +27,9 @@ py_all = all
 
 # INTERNAL UTILS
 theano.config.floatX = _FLOATX
-_LEARNING_PHASE = T.scalar(dtype='uint8', name='keras_learning_phase')  # 0 = test, 1 = train
+_LEARNING_PHASE = T.scalar(
+    dtype='uint8',
+    name='keras_learning_phase')  # 0 = test, 1 = train
 
 
 def learning_phase():
@@ -52,7 +54,8 @@ def _assert_sparse_module():
 
 
 def is_sparse(tensor):
-    return th_sparse_module and isinstance(tensor.type, th_sparse_module.SparseType)
+    return th_sparse_module and isinstance(
+        tensor.type, th_sparse_module.SparseType)
 
 
 def to_dense(tensor):
@@ -229,7 +232,7 @@ def batch_dot(x, y, axes=None):
             dimension 2 of y has been summed over. (dot_axes[1] = 2)
         output_shape = (100, 30)
     '''
-    if type(axes) == int:
+    if isinstance(axes, int):
         axes = (axes, axes)
     if axes is None:
         # behaves like tf.batch_matmul as default
@@ -394,7 +397,8 @@ def normalize_batch_in_training(x, gamma, beta,
     '''Compute mean and std for batch then apply batch_normalization on batch.
     '''
     dev = theano.config.device
-    use_cudnn = ndim(x) < 5 and reduction_axes == [0, 2, 3] and (dev.startswith('cuda') or dev.startswith('gpu'))
+    use_cudnn = ndim(x) < 5 and reduction_axes == [0, 2, 3] and (
+        dev.startswith('cuda') or dev.startswith('gpu'))
     if use_cudnn:
         broadcast_beta = beta.dimshuffle('x', 0, 'x', 'x')
         broadcast_gamma = gamma.dimshuffle('x', 0, 'x', 'x')
@@ -435,12 +439,13 @@ def batch_normalization(x, mean, var, beta, gamma, epsilon=0.0001):
     use_cudnn = ndim < 5 and (dev.startswith('cuda') or dev.startswith('gpu'))
     if use_cudnn:
         try:
-            return theano.sandbox.cuda.dnn.dnn_batch_normalization_test(x, gamma, beta, mean, var,
-                                                                        'spatial', epsilon)
+            return theano.sandbox.cuda.dnn.dnn_batch_normalization_test(
+                x, gamma, beta, mean, var, 'spatial', epsilon)
         except AttributeError:
             pass
-    return T.nnet.bn.batch_normalization(x, gamma, beta, mean, sqrt(var + epsilon),
-                                         mode='high_mem')
+    return T.nnet.bn.batch_normalization(
+        x, gamma, beta, mean, sqrt(
+            var + epsilon), mode='high_mem')
 
 
 # SHAPE OPERATIONS
@@ -665,9 +670,10 @@ def one_hot(indices, nb_classes):
 def reverse(x, axes):
     '''Reverse a tensor along the the specified axes
     '''
-    if type(axes) == int:
+    if isinstance(axes, int):
         axes = [axes]
-    slices = [slice(None, None, -1) if i in axes else slice(None, None, None) for i in range(x.ndim)]
+    slices = [slice(None, None, -1) if i in axes else slice(None,
+                                                            None, None) for i in range(x.ndim)]
     return x[slices]
 
 
@@ -798,7 +804,7 @@ def rnn(step_function, inputs, initial_states,
         constants = []
 
     if mask is not None:
-        if mask.ndim == ndim-1:
+        if mask.ndim == ndim - 1:
             mask = expand_dims(mask)
         assert mask.ndim == ndim
         mask = mask.dimshuffle(axes)
@@ -812,7 +818,8 @@ def rnn(step_function, inputs, initial_states,
             successive_states = []
             states = initial_states
             for i in indices:
-                output, new_states = step_function(inputs[i], states + constants)
+                output, new_states = step_function(
+                    inputs[i], states + constants)
 
                 if len(successive_outputs) == 0:
                     prev_output = zeros_like(output)
@@ -831,10 +838,12 @@ def rnn(step_function, inputs, initial_states,
             outputs = T.stack(*successive_outputs)
             states = []
             for i in range(len(successive_states[-1])):
-                states.append(T.stack(*[states_at_step[i] for states_at_step in successive_states]))
+                states.append(T.stack(*[states_at_step[i]
+                                        for states_at_step in successive_states]))
         else:
             # build an all-zero tensor of shape (samples, output_dim)
-            initial_output = step_function(inputs[0], initial_states + constants)[0] * 0
+            initial_output = step_function(
+                inputs[0], initial_states + constants)[0] * 0
             # Theano gets confused by broadcasting patterns in the scan op
             initial_output = T.unbroadcast(initial_output, 0, 1)
 
@@ -855,7 +864,7 @@ def rnn(step_function, inputs, initial_states,
                 go_backwards=go_backwards)
 
             # deal with Theano API inconsistency
-            if type(results) is list:
+            if isinstance(results, list):
                 outputs = results[0]
                 states = results[1:]
             else:
@@ -877,7 +886,8 @@ def rnn(step_function, inputs, initial_states,
             outputs = T.stack(*successive_outputs)
             states = []
             for i in range(len(successive_states[-1])):
-                states.append(T.stack(*[states_at_step[i] for states_at_step in successive_states]))
+                states.append(T.stack(*[states_at_step[i]
+                                        for states_at_step in successive_states]))
 
         else:
             def _step(input, *states):
@@ -892,7 +902,7 @@ def rnn(step_function, inputs, initial_states,
                 go_backwards=go_backwards)
 
             # deal with Theano API inconsistency
-            if type(results) is list:
+            if isinstance(results, list):
                 outputs = results[0]
                 states = results[1:]
             else:
@@ -937,10 +947,11 @@ def in_test_phase(x, alt):
 # NN OPERATIONS
 
 def _assert_has_capability(module, func):
-    assert hasattr(module, func), ('It looks like like your version of '
-                                   'Theano is out of date. '
-                                   'Install the latest version with:\n'
-                                   'pip install git+git://github.com/Theano/Theano.git --upgrade --no-deps')
+    assert hasattr(
+        module, func), ('It looks like like your version of '
+                        'Theano is out of date. '
+                        'Install the latest version with:\n'
+                        'pip install git+git://github.com/Theano/Theano.git --upgrade --no-deps')
 
 
 def elu(x, alpha=1.0):
@@ -1034,7 +1045,8 @@ def dropout(x, level, noise_shape=None, seed=None):
         random_tensor = rng.binomial(x.shape, p=retain_prob, dtype=x.dtype)
     else:
         random_tensor = rng.binomial(noise_shape, p=retain_prob, dtype=x.dtype)
-        random_tensor = T.patternbroadcast(random_tensor, [dim == 1 for dim in noise_shape])
+        random_tensor = T.patternbroadcast(
+            random_tensor, [dim == 1 for dim in noise_shape])
 
     x *= random_tensor
     x /= retain_prob
@@ -1057,7 +1069,11 @@ def in_top_k(predictions, targets, k):
         targets_i is within top-k values of predictions_i
     '''
     predictions_top_k = T.argsort(predictions)[:, -k:]
-    result, _ = theano.map(lambda prediction, target: any(equal(prediction, target)), sequences=[predictions_top_k, targets])
+    result, _ = theano.map(
+        lambda prediction, target: any(
+            equal(
+                prediction, target)), sequences=[
+            predictions_top_k, targets])
     return result
 
 
@@ -1125,12 +1141,20 @@ def _preprocess_filter_shape(dim_ordering, filter_shape):
     return filter_shape
 
 
-def _postprocess_conv2d_output(conv_out, x, border_mode, np_kernel, strides, dim_ordering):
+def _postprocess_conv2d_output(
+        conv_out,
+        x,
+        border_mode,
+        np_kernel,
+        strides,
+        dim_ordering):
     if border_mode == 'same':
         if np_kernel.shape[2] % 2 == 0:
-            conv_out = conv_out[:, :, :(x.shape[2] + strides[0] - 1) // strides[0], :]
+            conv_out = conv_out[:, :, :(
+                x.shape[2] + strides[0] - 1) // strides[0], :]
         if np_kernel.shape[3] % 2 == 0:
-            conv_out = conv_out[:, :, :, :(x.shape[3] + strides[1] - 1) // strides[1]]
+            conv_out = conv_out[:, :, :, :(
+                x.shape[3] + strides[1] - 1) // strides[1]]
     if dim_ordering == 'tf':
         conv_out = conv_out.dimshuffle((0, 2, 3, 1))
     return conv_out
@@ -1158,7 +1182,8 @@ def conv2d(x, kernel, strides=(1, 1), border_mode='valid',
     image_shape = _preprocess_image_shape(dim_ordering, image_shape)
     filter_shape = _preprocess_filter_shape(dim_ordering, filter_shape)
 
-    # TODO: remove the if statement when theano with no filter dilation is deprecated.
+    # TODO: remove the if statement when theano with no filter dilation is
+    # deprecated.
     if filter_dilation == (1, 1):
         conv_out = T.nnet.conv2d(x, kernel,
                                  border_mode=th_border_mode,
@@ -1203,11 +1228,12 @@ def deconv2d(x, kernel, output_shape, strides=(1, 1),
     np_kernel = kernel.eval()
     filter_shape = _preprocess_filter_shape(dim_ordering, filter_shape)
 
-    op = T.nnet.abstract_conv.AbstractConv2d_gradInputs(imshp=output_shape,
-                                                        kshp=filter_shape,
-                                                        subsample=strides,
-                                                        border_mode=th_border_mode,
-                                                        filter_flip=not flip_filters)
+    op = T.nnet.abstract_conv.AbstractConv2d_gradInputs(
+        imshp=output_shape,
+        kshp=filter_shape,
+        subsample=strides,
+        border_mode=th_border_mode,
+        filter_flip=not flip_filters)
     conv_out = op(kernel, x, output_shape[2:])
 
     conv_out = _postprocess_conv2d_output(conv_out, x, border_mode, np_kernel,
@@ -1246,7 +1272,8 @@ def conv3d(x, kernel, strides=(1, 1, 1),
         # TH input shape: (samples, input_depth, conv_dim1, conv_dim2, conv_dim3)
         # TF input shape: (samples, conv_dim1, conv_dim2, conv_dim3, input_depth)
         # TH kernel shape: (out_depth, input_depth, kernel_dim1, kernel_dim2, kernel_dim3)
-        # TF kernel shape: (kernel_dim1, kernel_dim2, kernel_dim3, input_depth, out_depth)
+        # TF kernel shape: (kernel_dim1, kernel_dim2, kernel_dim3, input_depth,
+        # out_depth)
         x = x.dimshuffle((0, 4, 1, 2, 3))
         kernel = kernel.dimshuffle((4, 3, 0, 1, 2))
         if volume_shape:
@@ -1419,15 +1446,18 @@ def random_binomial(shape, p=0.0, dtype=_FLOATX, seed=None):
 # Note that tensorflow's native CTC code is significantly
 # faster than this
 
+
 def ctc_interleave_blanks(Y):
     Y_ = T.alloc(-1, Y.shape[0] * 2 + 1)
     Y_ = T.set_subtensor(Y_[T.arange(Y.shape[0]) * 2 + 1], Y)
     return Y_
 
+
 def ctc_create_skip_idxs(Y):
     skip_idxs = T.arange((Y.shape[0] - 3) // 2) * 2 + 1
     non_repeats = T.neq(Y[skip_idxs], Y[skip_idxs + 2])
     return skip_idxs[non_repeats.nonzero()]
+
 
 def ctc_update_log_p(skip_idxs, zeros, active, log_p_curr, log_p_prev):
     active_skip_idxs = skip_idxs[(skip_idxs < active).nonzero()]
@@ -1445,7 +1475,8 @@ def ctc_update_log_p(skip_idxs, zeros, active, log_p_curr, log_p_prev):
     # previous transitions
     _p_prev = T.inc_subtensor(_p_prev[1:], _p_prev[:-1])
     # skip transitions
-    _p_prev = T.inc_subtensor(_p_prev[active_skip_idxs + 2], p_prev[active_skip_idxs])
+    _p_prev = T.inc_subtensor(
+        _p_prev[active_skip_idxs + 2], p_prev[active_skip_idxs])
     updated_log_p_prev = T.log(_p_prev) + common_factor
 
     log_p_next = T.set_subtensor(
@@ -1454,36 +1485,56 @@ def ctc_update_log_p(skip_idxs, zeros, active, log_p_curr, log_p_prev):
     )
     return active_next, log_p_next
 
+
 def ctc_path_probs(predict, Y, alpha=1e-4):
-    smoothed_predict = (1 - alpha) * predict[:, Y] + alpha * np.float32(1.) / Y.shape[0]
+    smoothed_predict = (1 - alpha) * \
+        predict[:, Y] + alpha * np.float32(1.) / Y.shape[0]
     L = T.log(smoothed_predict)
     zeros = T.zeros_like(L[0])
     base = T.set_subtensor(zeros[:1], np.float32(1))
     log_first = zeros
 
     f_skip_idxs = ctc_create_skip_idxs(Y)
-    b_skip_idxs = ctc_create_skip_idxs(Y[::-1])  # there should be a shortcut to calculating this
+    # there should be a shortcut to calculating this
+    b_skip_idxs = ctc_create_skip_idxs(Y[::-1])
 
-    def step(log_f_curr, log_b_curr, f_active, log_f_prev, b_active, log_b_prev):
-        f_active_next, log_f_next = ctc_update_log_p(f_skip_idxs, zeros, f_active, log_f_curr, log_f_prev)
-        b_active_next, log_b_next = ctc_update_log_p(b_skip_idxs, zeros, b_active, log_b_curr, log_b_prev)
+    def step(
+            log_f_curr,
+            log_b_curr,
+            f_active,
+            log_f_prev,
+            b_active,
+            log_b_prev):
+        f_active_next, log_f_next = ctc_update_log_p(
+            f_skip_idxs, zeros, f_active, log_f_curr, log_f_prev)
+        b_active_next, log_b_next = ctc_update_log_p(
+            b_skip_idxs, zeros, b_active, log_b_curr, log_b_prev)
         return f_active_next, log_f_next, b_active_next, log_b_next
 
     [f_active, log_f_probs, b_active, log_b_probs], _ = theano.scan(
         step, sequences=[L, L[::-1, ::-1]], outputs_info=[np.int32(1), log_first, np.int32(1), log_first])
 
     idxs = T.arange(L.shape[1]).dimshuffle('x', 0)
-    mask = (idxs < f_active.dimshuffle(0, 'x')) & (idxs < b_active.dimshuffle(0, 'x'))[::-1, ::-1]
+    mask = (
+        idxs < f_active.dimshuffle(
+            0, 'x')) & (
+        idxs < b_active.dimshuffle(
+            0, 'x'))[
+        ::-1, ::-1]
     log_probs = log_f_probs + log_b_probs[::-1, ::-1] - L
     return log_probs, mask
+
 
 def ctc_cost(predict, Y):
     log_probs, mask = ctc_path_probs(predict, ctc_interleave_blanks(Y))
     common_factor = T.max(log_probs)
-    total_log_prob = T.log(T.sum(T.exp(log_probs - common_factor)[mask.nonzero()])) + common_factor
+    total_log_prob = T.log(
+        T.sum(T.exp(log_probs - common_factor)[mask.nonzero()])) + common_factor
     return -total_log_prob
 
 # batchifies original CTC code
+
+
 def ctc_batch_cost(y_true, y_pred, input_length, label_length):
     '''Runs CTC loss algorithm on each batch element.
     # Arguments
@@ -1499,13 +1550,17 @@ def ctc_batch_cost(y_true, y_pred, input_length, label_length):
             CTC loss of each element
     '''
 
-    def ctc_step(y_true_step, y_pred_step, input_length_step, label_length_step):
+    def ctc_step(
+            y_true_step,
+            y_pred_step,
+            input_length_step,
+            label_length_step):
         y_pred_step = y_pred_step[0: input_length_step[0]]
         y_true_step = y_true_step[0:label_length_step[0]]
         return ctc_cost(y_pred_step, y_true_step)
 
     ret, _ = theano.scan(
-        fn = ctc_step,
+        fn=ctc_step,
         outputs_info=None,
         sequences=[y_true, y_pred, input_length, label_length]
     )

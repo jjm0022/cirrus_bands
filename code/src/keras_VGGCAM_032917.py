@@ -29,6 +29,7 @@ images/
             ...
 '''
 import matplotlib
+from functools import reduce
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
@@ -50,28 +51,32 @@ from keras.layers import Activation, Dropout, Flatten, Dense
 
 
 def global_average_pooling(x):
-  return K.mean(x,axis=(2,3))
+    return K.mean(x, axis=(2, 3))
+
 
 def global_average_pooling_shape(input_shape):
-  return input_shape[0:2]
+    return input_shape[0:2]
 
-def factors(n):    
-    return sorted(reduce(list.__add__, 
-                ([i, n//i] for i in range(1, int(n**0.5) + 1) if n % i == 0)))
 
-def factor(n,max_=50):    
+def factors(n):
+    return sorted(reduce(list.__add__, ([i, n // i]
+                                        for i in range(1, int(n**0.5) + 1) if n % i == 0)))
+
+
+def factor(n, max_=50):
     '''
     Takes number and returns the highest factor that is less than max_.
     '''
-    factors = sorted(reduce(list.__add__,([i, n//i] for i in range(1, int(n**0.5) + 1) if n % i == 0)))
-    tmp=1
+    factors = sorted(reduce(
+        list.__add__, ([i, n // i] for i in range(1, int(n**0.5) + 1) if n % i == 0)))
+    tmp = 1
     for item in factors:
-        if item>tmp and item<max_:
-            tmp=item
+        if item > tmp and item < max_:
+            tmp = item
     return tmp
 
 
-home=os.environ['HOME']
+home = os.environ['HOME']
 start_time = dt.datetime.strftime(dt.datetime.now(), '%H:%M:%S')
 print('Start Time is: {0}'.format(start_time))
 
@@ -82,47 +87,48 @@ weights_path = 'vgg16_weights.h5'
 img_width, img_height = 256, 256
 stop_train = 25
 
-val_data_dir = home+'/Dropbox/cnn_stuff/4class/val'
-train_data_dir = home+'/Dropbox/cnn_stuff/4class/train'
-_hurr=glob(train_data_dir + '/hurr/*')
-_jet=glob(train_data_dir + '/jet/*')
-_mcs=glob(train_data_dir + '/mcs/*')
-_mlc=glob(train_data_dir + '/mlc/*')
-_nBands=glob(train_data_dir + '/not_bands/*')
-_other=glob(train_data_dir + '/other/*')
-_hurrVal=glob(val_data_dir + '/hurr/*')
-_jetVal=glob(val_data_dir + '/jet/*')
-_mcsVal=glob(val_data_dir + '/mcs/*')
-_mlcVal=glob(val_data_dir + '/mlc/*')
-_nBandsVal=glob(val_data_dir + '/not_bands/*')
-_otherVal=glob(val_data_dir + '/other/*')
-nb_train_samples=len(_hurr)+len(_jet)+len(_mcs)+len(_mlc)+len(_nBands)+len(_other)
-nb_val_samples=len(_hurrVal)+len(_jetVal)+len(_mcsVal)+len(_mlcVal)+len(_nBandsVal)+len(_otherVal)
+val_data_dir = home + '/Dropbox/cnn_stuff/4class/val'
+train_data_dir = home + '/Dropbox/cnn_stuff/4class/train'
+_hurr = glob(train_data_dir + '/hurr/*')
+_jet = glob(train_data_dir + '/jet/*')
+_mcs = glob(train_data_dir + '/mcs/*')
+_mlc = glob(train_data_dir + '/mlc/*')
+_nBands = glob(train_data_dir + '/not_bands/*')
+_other = glob(train_data_dir + '/other/*')
+_hurrVal = glob(val_data_dir + '/hurr/*')
+_jetVal = glob(val_data_dir + '/jet/*')
+_mcsVal = glob(val_data_dir + '/mcs/*')
+_mlcVal = glob(val_data_dir + '/mlc/*')
+_nBandsVal = glob(val_data_dir + '/not_bands/*')
+_otherVal = glob(val_data_dir + '/other/*')
+nb_train_samples = len(_hurr) + len(_jet) + len(_mcs) + \
+    len(_mlc) + len(_nBands) + len(_other)
+nb_val_samples = len(_hurrVal) + len(_jetVal) + len(_mcsVal) + \
+    len(_mlcVal) + len(_nBandsVal) + len(_otherVal)
 #nb_validation_samples = 500
-nb_epoch =500
+nb_epoch = 500
 
 # Determine batch size for train images
-#trainBatch=factor(nb_train_samples)
-#valBatch=factor(nb_val_samples)
-trainBatch=20
-valBatch=6
+# trainBatch=factor(nb_train_samples)
+# valBatch=factor(nb_val_samples)
+trainBatch = 20
+valBatch = 6
 print('Train batch size: {0}'.format(trainBatch))
 print('Validation batch size: {0}'.format(valBatch))
 
 
-
 # build the VGG16 network
 model = Sequential()
-model.add(ZeroPadding2D((1, 1), input_shape=(3, 256, 256))) #layer 0
+model.add(ZeroPadding2D((1, 1), input_shape=(3, 256, 256)))  # layer 0
 model.add(Convolution2D(64, 3, 3, activation='relu'))
 model.add(ZeroPadding2D((1, 1)))
-model.add(Convolution2D(64, 3, 3, activation='relu'))       #layer 3
+model.add(Convolution2D(64, 3, 3, activation='relu'))  # layer 3
 model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
 model.add(ZeroPadding2D((1, 1)))
 model.add(Convolution2D(128, 3, 3, activation='relu'))
 model.add(ZeroPadding2D((1, 1)))
-model.add(Convolution2D(128, 3, 3, activation='relu'))      #layer 7
+model.add(Convolution2D(128, 3, 3, activation='relu'))  # layer 7
 model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
 model.add(ZeroPadding2D((1, 1)))
@@ -130,7 +136,7 @@ model.add(Convolution2D(256, 3, 3, activation='relu'))
 model.add(ZeroPadding2D((1, 1)))
 model.add(Convolution2D(256, 3, 3, activation='relu'))
 model.add(ZeroPadding2D((1, 1)))
-model.add(Convolution2D(256, 3, 3, activation='relu'))      #layer 13
+model.add(Convolution2D(256, 3, 3, activation='relu'))  # layer 13
 model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
 model.add(ZeroPadding2D((1, 1)))
@@ -138,7 +144,7 @@ model.add(Convolution2D(512, 3, 3, activation='relu'))
 model.add(ZeroPadding2D((1, 1)))
 model.add(Convolution2D(512, 3, 3, activation='relu'))
 model.add(ZeroPadding2D((1, 1)))
-model.add(Convolution2D(512, 3, 3, activation='relu'))       #layer 19
+model.add(Convolution2D(512, 3, 3, activation='relu'))  # layer 19
 model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
 model.add(ZeroPadding2D((1, 1)))
@@ -146,22 +152,24 @@ model.add(Convolution2D(512, 3, 3, activation='relu'))
 model.add(ZeroPadding2D((1, 1)))
 model.add(Convolution2D(512, 3, 3, activation='relu'))
 model.add(ZeroPadding2D((1, 1)))
-model.add(Convolution2D(512, 3, 3, activation='relu'))       #layer 25
+model.add(Convolution2D(512, 3, 3, activation='relu'))  # layer 25
 
 # load the weights of the VGG16 networks
 # (trained on ImageNet, won the ILSVRC competition in 2014)
 # note: when there is a complete match between your model definition
 # and your weight savefile, you can simply call model.load_weights(filename)
-assert os.path.exists(weights_path), 'Model weights not found (see "weights_path" variable in script).'
+assert os.path.exists(
+    weights_path), 'Model weights not found (see "weights_path" variable in script).'
 with h5py.File(weights_path) as hw:
     for k in range(hw.attrs['nb_layers']):
         # stop loop after all layers have been loaded.
         if k >= len(model.layers):
             break
         g = hw['layer_{}'.format(k)]
-        weights = [g['param_{}'.format(p)] for p in range(g.attrs['nb_params'])]
+        weights = [g['param_{}'.format(p)]
+                   for p in range(g.attrs['nb_params'])]
         model.layers[k].set_weights(weights)
-        #if model.layers[k].name == "convolution2d_13":
+        # if model.layers[k].name == "convolution2d_13":
         #    break
 print('Model loaded.')
 
@@ -175,7 +183,7 @@ model.add(Dense(6, activation='softmax'))
 # Add another conv layer with ReLU + GAP
 #model.add(Convolution2D(6, 3, 3, activation='relu', border_mode="same"))
 #model.add(AveragePooling2D((14, 14)))
-#model.add(Flatten())
+# model.add(Flatten())
 # Add the W layer
 #model.add(Dense(6, activation='softmax'))
 
@@ -189,8 +197,8 @@ for layer in model.layers[:stop_train]:
 # compile the model with a SGD/momentum optimizer
 # and a very slow learning rate.
 loss_func = 'categorical_crossentropy'
-lr=1e-4
-momentum=0.9
+lr = 1e-4
+momentum = 0.9
 model.compile(loss=loss_func,
               optimizer=optimizers.SGD(lr=lr, momentum=momentum),
               metrics=['accuracy'])
@@ -199,67 +207,82 @@ print('##### Augmenting Images #####')
 
 # prepare data augmentation configuration
 train_datagen = ImageDataGenerator(
-        rescale=1./255,
-        shear_range=0.3,
-        rotation_range=0.3,
-        vertical_flip=True,
-        zoom_range=0.3,
-        horizontal_flip=True)
+    rescale=1. / 255,
+    shear_range=0.3,
+    rotation_range=0.3,
+    vertical_flip=True,
+    zoom_range=0.3,
+    horizontal_flip=True)
 
 
-test_datagen = ImageDataGenerator(rescale=1./255)
+test_datagen = ImageDataGenerator(rescale=1. / 255)
 
 # Augment images for training
 # bands=0
 # not_bands=1
-class_mode='categorical'
+class_mode = 'categorical'
 train_generator = train_datagen.flow_from_directory(
-        train_data_dir,
-        target_size=(img_height, img_width),
-        batch_size=trainBatch,
-        class_mode='categorical')
+    train_data_dir,
+    target_size=(img_height, img_width),
+    batch_size=trainBatch,
+    class_mode='categorical')
 
 validation_generator = test_datagen.flow_from_directory(
-        val_data_dir,
-        target_size=(img_height, img_width),
-        batch_size=valBatch,
-        class_mode='categorical')
+    val_data_dir,
+    target_size=(img_height, img_width),
+    batch_size=valBatch,
+    class_mode='categorical')
 
 now = dt.datetime.strftime(dt.datetime.now(), '%m%d%y-%H%M')
 date = dt.datetime.strftime(dt.datetime.now(), '%m%d%y')
 
-if not os.path.exists(home+'/Dropbox/cnn_stuff/models/{0}/{1}'.format(date,now)):
-  os.makedirs(home+'/Dropbox/cnn_stuff/models/{0}/{1}'.format(date,now))
-prefix=home+'/Dropbox/cnn_stuff/models/{0}/{1}/'.format(date,now)
-early_stopping = EarlyStopping(monitor='val_loss',patience=10,verbose=2,mode='auto')
-checkpointer = ModelCheckpoint(filepath=prefix+'transVGG.hdf5', verbose=1, save_best_only=True)
-#save model code for reference later
-shutil.copyfile(home+'/Dropbox/cnn_stuff/code/keras_VGGCAM.py',prefix+'keras_VGGCAM.py')
+if not os.path.exists(
+        home + '/Dropbox/cnn_stuff/models/{0}/{1}'.format(date, now)):
+    os.makedirs(home + '/Dropbox/cnn_stuff/models/{0}/{1}'.format(date, now))
+prefix = home + '/Dropbox/cnn_stuff/models/{0}/{1}/'.format(date, now)
+early_stopping = EarlyStopping(
+    monitor='val_loss',
+    patience=10,
+    verbose=2,
+    mode='auto')
+checkpointer = ModelCheckpoint(
+    filepath=prefix +
+    'transVGG.hdf5',
+    verbose=1,
+    save_best_only=True)
+# save model code for reference later
+shutil.copyfile(
+    home +
+    '/Dropbox/cnn_stuff/code/keras_VGGCAM.py',
+    prefix +
+    'keras_VGGCAM.py')
 
 print('##### Training Model #####')
 
 # fine-tune the model
 # verbose (0=no logging; 1=progress bar; 2=one log line per epoch.)
-hist=model.fit_generator(
-        train_generator,
-        verbose=1,
-        samples_per_epoch=nb_train_samples,
-        nb_epoch=nb_epoch,
-        validation_data=validation_generator,
-        nb_val_samples=nb_val_samples,
-        callbacks=[early_stopping,checkpointer])
+hist = model.fit_generator(
+    train_generator,
+    verbose=1,
+    samples_per_epoch=nb_train_samples,
+    nb_epoch=nb_epoch,
+    validation_data=validation_generator,
+    nb_val_samples=nb_val_samples,
+    callbacks=[early_stopping, checkpointer])
 
 # Save the models weights
-model.save_weights('{0}transverseVGG_ftil_{1}_weights_{2}.h5'.format(prefix,stop_train,now))
+model.save_weights(
+    '{0}transverseVGG_ftil_{1}_weights_{2}.h5'.format(
+        prefix, stop_train, now))
 
 # Save the architecture of the model in a json file
 model_json = model.to_json()
 
-f = open('{0}model_ftil_{1}_{2}.json'.format(prefix,stop_train,now), 'w')
+f = open('{0}model_ftil_{1}_{2}.json'.format(prefix, stop_train, now), 'w')
 f.write(model_json)
 f.close()
 
-with open('{0}model_info_{1}.txt'.format(prefix,now),'w') as g:
+with open('{0}model_info_{1}.txt'.format(prefix, now), 'w') as g:
     g.write('Model started on {0}.\n'.format(start_time))
     g.write('Number of training samples: {0}.\n'.format(nb_train_samples))
     g.write('Total number of layers {0}.\n'.format(len(model.layers)))
@@ -267,8 +290,9 @@ with open('{0}model_info_{1}.txt'.format(prefix,now),'w') as g:
     g.write('Loss function: {0}.\n'.format(loss_func))
     g.write('Learning rate: {0}.\n'.format(lr))
     g.write('Momentum: {0}.\n'.format(momentum))
-    g.write('Image dims: {0}X{1}.\n'.format(img_width,img_height))
-    g.write('Number of epochs run: {0}.\n'.format(len(hist.history['val_loss'])))
+    g.write('Image dims: {0}X{1}.\n'.format(img_width, img_height))
+    g.write('Number of epochs run: {0}.\n'.format(
+        len(hist.history['val_loss'])))
     g.write('Batch size for training: {0}\n'.format(trainBatch))
     g.write('Batch size for validation: {0}\n'.format(valBatch))
     end_time = dt.datetime.strftime(dt.datetime.now(), '%H:%M:%S')
@@ -276,35 +300,65 @@ with open('{0}model_info_{1}.txt'.format(prefix,now),'w') as g:
 
 # Plot the loss and accuracy through training
 plt.style.use('seaborn-deep')
-fig,ax1 = plt.subplots()
+fig, ax1 = plt.subplots()
 fig.set_figheight(16)
 fig.set_figwidth(28)
-#ax1.set_axis_bgcolor('white')
-epochs=range(0,len(hist.history['val_loss']))
-pl1=ax1.plot(epochs,hist.history['val_loss'],color='dodgerblue',linewidth=2.75,label='Validation Loss')
-pl2=ax1.plot(epochs,hist.history['loss'],color='olive',linewidth=2.75,label='Training Loss',linestyle='dashed')
-ax1.set_ylabel('Loss',fontsize=20)
-ax1.set_xlabel('Epoch',fontsize=20)
-ax1.set_ylim([0.,max(hist.history['loss'])+0.1])
-ax1.tick_params(axis='both',labelsize=18)
-for spine in ['left','right','top','bottom']:
-  ax1.spines[spine].set_color('k')
+# ax1.set_axis_bgcolor('white')
+epochs = range(0, len(hist.history['val_loss']))
+pl1 = ax1.plot(
+    epochs,
+    hist.history['val_loss'],
+    color='dodgerblue',
+    linewidth=2.75,
+    label='Validation Loss')
+pl2 = ax1.plot(
+    epochs,
+    hist.history['loss'],
+    color='olive',
+    linewidth=2.75,
+    label='Training Loss',
+    linestyle='dashed')
+ax1.set_ylabel('Loss', fontsize=20)
+ax1.set_xlabel('Epoch', fontsize=20)
+ax1.set_ylim([0., max(hist.history['loss']) + 0.1])
+ax1.tick_params(axis='both', labelsize=18)
+for spine in ['left', 'right', 'top', 'bottom']:
+    ax1.spines[spine].set_color('k')
 
-ax2=ax1.twinx()
-#ax2.set_axis_bgcolor('white')
-pl3=ax2.plot(epochs,hist.history['val_acc'],'orangered',linewidth=2.75,label='Validation Accuracy')
-pl4=ax2.plot(epochs,hist.history['acc'],'firebrick',linewidth=2.75,label='Training Accuracy',linestyle='dashed')
-ax2.set_ylabel('Accuracy',fontsize=20)
-ax2.tick_params(axis='both',labelsize=18)
-ax2.set_ylim([0.,1.])
+ax2 = ax1.twinx()
+# ax2.set_axis_bgcolor('white')
+pl3 = ax2.plot(
+    epochs,
+    hist.history['val_acc'],
+    'orangered',
+    linewidth=2.75,
+    label='Validation Accuracy')
+pl4 = ax2.plot(
+    epochs,
+    hist.history['acc'],
+    'firebrick',
+    linewidth=2.75,
+    label='Training Accuracy',
+    linestyle='dashed')
+ax2.set_ylabel('Accuracy', fontsize=20)
+ax2.tick_params(axis='both', labelsize=18)
+ax2.set_ylim([0., 1.])
 ax2.grid(True)
-for spine in ['left','right','top','bottom']:
-  ax2.spines[spine].set_color('k')
-pl=pl1+pl2+pl3+pl4
-labs=[a.get_label() for a in pl]
-lgd=ax1.legend(pl,labs,bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.,fontsize=18)
-#lgd=ax1.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.,fontsize=18)
-art=[]
+for spine in ['left', 'right', 'top', 'bottom']:
+    ax2.spines[spine].set_color('k')
+pl = pl1 + pl2 + pl3 + pl4
+labs = [a.get_label() for a in pl]
+lgd = ax1.legend(
+    pl,
+    labs,
+    bbox_to_anchor=(
+        1.05,
+        1),
+    loc=2,
+    borderaxespad=0.,
+    fontsize=18)
+# lgd=ax1.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.,fontsize=18)
+art = []
 art.append(lgd)
 '''
 ax1 = plt.subplot(2,2,1)
@@ -320,7 +374,6 @@ ax4 = plt.subplot(2,2,4)
 ax4.plot(hist.history['acc'])
 ax4.set_title('train_acc')
 '''
-plt.savefig('{0}run_ftil_{1}_{2}.png'.format(prefix,stop_train,now),
-        additional_artists=art,
-        bbox_inches='tight')
-
+plt.savefig('{0}run_ftil_{1}_{2}.png'.format(prefix, stop_train, now),
+            additional_artists=art,
+            bbox_inches='tight')

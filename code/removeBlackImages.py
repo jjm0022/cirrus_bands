@@ -5,8 +5,6 @@
 # @Last Modified time: 2017-05-02 11:13:41
 
 
-
-
 import os
 from glob import glob
 from PIL import Image
@@ -31,11 +29,11 @@ def move(result):
         day = result[0].split('/')[7]
         year = result[0].split('/')[5]
         img = result[0].split('/')[-1]
-        #print(img)
+        # print(img)
         os.rename(result[0], os.path.join(new_location, year, month, day, img))
         return 1
     else:
-    	return 0
+        return 0
 
 
 def dummy(imgList):
@@ -44,7 +42,7 @@ def dummy(imgList):
     p = ThreadPool(processes=multiprocessing.cpu_count())
     results = p.map(checkBlackSpace, imgList, chunksize=10)
     nums = p.map(move, results)
-    num=sum(nums)
+    num = sum(nums)
     p.close()
     return num
 
@@ -60,10 +58,10 @@ def checkBlackSpace(img):
     nblack = 0
     for pixel in pixels:
         tot = 0
-        for pix in pixel:    
+        for pix in pixel:
             if pix <= black_value:
                 tot += 1
-        if tot == 3:                    
+        if tot == 3:
             nblack += 1
     n = len(pixels)
     if (nblack / float(n)) > 0.30:
@@ -94,6 +92,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-

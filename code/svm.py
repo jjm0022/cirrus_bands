@@ -8,7 +8,8 @@ from sklearn.model_selection import GridSearchCV
 import random
 import numpy as np
 
-def load_img(path, target_size=(256,256)): 
+
+def load_img(path, target_size=(256, 256)):
     '''Load an image into PIL format.
     # Arguments
       path: path to image file
@@ -29,7 +30,7 @@ def img_to_array(img):
     '''
     x = np.asarray(img, dtype=np.uint8)
     # To apply a classifier on this data, we need to flatten the image, to
-	# turn the data in a (samples, feature) matrix:
+    # turn the data in a (samples, feature) matrix:
     x = x.flatten()
     return x
 
@@ -74,7 +75,7 @@ train_path = '/home/jmiller/Dropbox/school/cnn_stuff/soni_images/paper_data/trai
 test_path = '/home/jmiller/Dropbox/school/cnn_stuff/soni_images/paper_data/test'
 print('Loading Training Images...\n')
 train_images, train_labels = load_data(train_path)
-#shuffle the images and labels for the train set
+# shuffle the images and labels for the train set
 n_samples = len(train_images)
 l = range(n_samples)
 l = list_shuffle(l)
@@ -89,7 +90,10 @@ classifier = svm.SVC(gamma=0.001)
 features = ['auto', 500, 1000]
 depth = [5, 10, 20]
 estimators = [100, 500, 1000]
-parameters = dict(max_features=features, max_depth=depth, n_estimators=estimators)
+parameters = dict(
+    max_features=features,
+    max_depth=depth,
+    n_estimators=estimators)
 
 
 #classifier = RandomForestClassifier(verbose=1, n_jobs=3)

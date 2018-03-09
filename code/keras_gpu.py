@@ -59,17 +59,32 @@ nb_epoch = 10
 
 # build the VGG16 network
 model = Sequential()
-model.add(ZeroPadding2D((1, 1), input_shape=(3, img_width, img_height))) #layer 0
+model.add(
+    ZeroPadding2D(
+        (1, 1), input_shape=(
+            3, img_width, img_height)))  # layer 0
 
 model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_1'))
 model.add(ZeroPadding2D((1, 1)))
-model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_2'))    #layer 3
+model.add(
+    Convolution2D(
+        64,
+        3,
+        3,
+        activation='relu',
+        name='conv1_2'))  # layer 3
 model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
 model.add(ZeroPadding2D((1, 1)))
 model.add(Convolution2D(128, 3, 3, activation='relu', name='conv2_1'))
 model.add(ZeroPadding2D((1, 1)))
-model.add(Convolution2D(128, 3, 3, activation='relu', name='conv2_2'))   #layer 7
+model.add(
+    Convolution2D(
+        128,
+        3,
+        3,
+        activation='relu',
+        name='conv2_2'))  # layer 7
 model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
 model.add(ZeroPadding2D((1, 1)))
@@ -77,7 +92,13 @@ model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_1'))
 model.add(ZeroPadding2D((1, 1)))
 model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_2'))
 model.add(ZeroPadding2D((1, 1)))
-model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_3'))   #layer 13
+model.add(
+    Convolution2D(
+        256,
+        3,
+        3,
+        activation='relu',
+        name='conv3_3'))  # layer 13
 model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
 model.add(ZeroPadding2D((1, 1)))
@@ -85,7 +106,13 @@ model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_1'))
 model.add(ZeroPadding2D((1, 1)))
 model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_2'))
 model.add(ZeroPadding2D((1, 1)))
-model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_3'))   #layer 19
+model.add(
+    Convolution2D(
+        512,
+        3,
+        3,
+        activation='relu',
+        name='conv4_3'))  # layer 19
 model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
 #model.add(ZeroPadding2D((1, 1)))
@@ -93,14 +120,15 @@ model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 #model.add(ZeroPadding2D((1, 1)))
 #model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_2'))
 #model.add(ZeroPadding2D((1, 1)))
-#model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_3'))   #layer 25
+# model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_3'))   #layer 25
 #model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
 # load the weights of the VGG16 networks
 # (trained on ImageNet, won the ILSVRC competition in 2014)
 # note: when there is a complete match between your model definition
 # and your weight savefile, you can simply call model.load_weights(filename)
-assert os.path.exists(weights_path), 'Model weights not found (see "weights_path" variable in script).'
+assert os.path.exists(
+    weights_path), 'Model weights not found (see "weights_path" variable in script).'
 f = h5py.File(weights_path)
 for k in range(f.attrs['nb_layers']):
     if k >= len(model.layers):
@@ -124,7 +152,7 @@ top_model.add(Dense(1, activation='sigmoid'))
 # note that it is necessary to start with a fully-trained
 # classifier, including the top classifier,
 # in order to successfully do fine-tuning
-#top_model.load_weights(top_model_weights_path)
+# top_model.load_weights(top_model_weights_path)
 
 # add the model on top of the convolutional base
 model.add(top_model)
@@ -144,50 +172,50 @@ print('##### Augmenting Images #####')
 
 # prepare data augmentation configuration
 train_datagen = ImageDataGenerator(
-        rescale=1./255,
-        shear_range=0.2,
-        zoom_range=0.2,
-        horizontal_flip=True)
+    rescale=1. / 255,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True)
 
-test_datagen = ImageDataGenerator(rescale=1./255)
+test_datagen = ImageDataGenerator(rescale=1. / 255)
 
 train_generator = train_datagen.flow_from_directory(
-        train_data_dir,
-        target_size=(img_height, img_width),
-        batch_size=32,
-        class_mode='binary')
+    train_data_dir,
+    target_size=(img_height, img_width),
+    batch_size=32,
+    class_mode='binary')
 
 validation_generator = test_datagen.flow_from_directory(
-        validation_data_dir,
-        target_size=(img_height, img_width),
-        batch_size=32,
-        class_mode='binary')
+    validation_data_dir,
+    target_size=(img_height, img_width),
+    batch_size=32,
+    class_mode='binary')
 
 print('##### Training Model #####')
 
 # fine-tune the model
-hist=model.fit_generator(
-        train_generator,
-        verbose=1,
-        samples_per_epoch=nb_train_samples,
-        nb_epoch=nb_epoch,
-        validation_data=validation_generator,
-        nb_val_samples=nb_validation_samples)
+hist = model.fit_generator(
+    train_generator,
+    verbose=1,
+    samples_per_epoch=nb_train_samples,
+    nb_epoch=nb_epoch,
+    validation_data=validation_generator,
+    nb_val_samples=nb_validation_samples)
 
 
 now = dt.datetime.strftime(dt.datetime.now(), '%Y%m%d-%H_%M_%S')
 
-#Plot the accuracy and loss information
-ax1 = plt.subplot(2,2,1)
+# Plot the accuracy and loss information
+ax1 = plt.subplot(2, 2, 1)
 ax1.plot(hist.history['val_loss'])
 ax1.set_title('val_loss')
-ax2 = plt.subplot(2,2,2)
+ax2 = plt.subplot(2, 2, 2)
 ax2.plot(hist.history['loss'])
 ax2.set_title('loss')
-ax3 = plt.subplot(2,2,3)
+ax3 = plt.subplot(2, 2, 3)
 ax3.plot(hist.history['val_acc'])
 ax3.set_title('val_acc')
-ax4 = plt.subplot(2,2,4)
+ax4 = plt.subplot(2, 2, 4)
 ax4.plot(hist.history['acc'])
 ax4.set_title('acc')
 
@@ -203,7 +231,3 @@ model_json = model.to_json()
 f = open('trained_models/model_{0}.json'.format(now), 'w')
 f.write(model_json)
 f.close()
-
-
-
-
