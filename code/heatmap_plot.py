@@ -30,11 +30,10 @@ def map_matrix(dic,
     # monthDict = {1:'Jan', 2:'Feb', 3:'Mar', 4:'Apr', 5:'May', 6:'Jun',
     #            7:'Jul', 8:'Aug', 9:'Sep', 10:'Oct', 11:'Nov', 12:'Dec'}
     season_dict = {
-        'winter': [
-            1, 2, 3], 'spring': [
-            4, 5, 6], 'summer': [
-                7, 8, 9], 'fall': [
-                    10, 11, 12]}
+        'winter': [1, 2, 3],
+        'spring': [4, 5, 6],
+        'summer': [7, 8, 9],
+        'fall': [10, 11, 12]}
 
     if dic:
         total = 0
@@ -98,15 +97,8 @@ def paper_plot(dic):
             max_ = tmp
 
     title_size = 16
-    im = axes[0,
-              0].pcolormesh(xs,
-                            ys,
-                            dic['winter'],
-                            alpha=0.8,
-                            antialiased=True,
-                            vmin=0,
-                            vmax=max_,
-                            cmap='jet')
+    im = axes[0, 0].pcolormesh(xs, ys, dic['winter'], alpha=0.8,
+                            antialiased=True, vmin=0, vmax=max_, cmap='jet')
     m1.drawcoastlines()
     parallels = np.linspace(90., -81., 20)
     meridians = np.arange(-180., 180, 18)
