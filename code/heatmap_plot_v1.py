@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# @Author: jmiller
+# @Date:   2018-03-12 20:26:34
+# @Last Modified by:   jmiller
+# @Last Modified time: 2018-03-12 22:07:35
 import json
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -67,8 +72,8 @@ def paper_plot(dic):
     '''
     Takes a dic of three year matrices and plots them on a single figure.
     '''
-    lats = np.linspace(90., -81, 20)
-    lons = np.arange(-180., 180, 9)
+    lats = np.linspace(90., -90, 21)
+    lons = np.arange(-180., 180 + 9., 9)
 
     cmap = plt.get_cmap('jet')
     cmap = truncate_colormap(cmap, 0.21, 1.0)
@@ -80,7 +85,7 @@ def paper_plot(dic):
                  llcrnrlon=lons[0], llcrnrlat=lats[-1],
                  urcrnrlon=lons[-1], urcrnrlat=lats[0],
                  resolution='l', ax=axes[0])
-    xs, ys = m1(np.arange(-180., 180, 9), np.linspace(90., -81, 20))
+    xs, ys = m1(np.arange(-180., 180 + 9., 9), np.linspace(90., -90, 21))
 
     max_ = 0
     for key in dic.keys():

@@ -766,12 +766,7 @@ class Thesis(object):
                 xs, ys = self.m(np.arange(-180., 180., 9),
                                 np.linspace(90., -81., 20))
                 #xs,ys = self.m(np.arange(-135., -45., 9),np.linspace(54., 18., 5))
-                plt.pcolormesh(
-                    xs,
-                    ys,
-                    matrix,
-                    alpha=0.8,
-                    antialiased=True,
+                plt.pcolormesh(xs, ys, matrix, alpha=0.8, antialiased=True,
                     vmax=np.max(matrix),
                     vmin=0)
                 cbar = plt.colorbar(
@@ -788,11 +783,9 @@ class Thesis(object):
                 parallels = np.linspace(90., -81., 20)
                 meridians = np.arange(-180., 180, 18)
                 self.m.drawparallels(
-                    parallels, labels=[
-                        1, 0, 0, 0], fontsize=6)
+                    parallels, labels=[1, 0, 0, 0], fontsize=6)
                 self.m.drawmeridians(
-                    meridians, labels=[
-                        0, 0, 0, 1], fontsize=6)
+                    meridians, labels=[0, 0, 0, 1], fontsize=6)
                 # plt.tight_layout()
                 plt.title('Transverse band occurence {0}.'.format(
                     self.year), size=22, fontname='Times New Roman')

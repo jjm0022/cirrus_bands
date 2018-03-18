@@ -2,14 +2,13 @@
 # @Author: jmiller
 # @Date:   2018-02-26 19:40:51
 # @Last Modified by:   jmiller
-# @Last Modified time: 2018-02-26 22:25:02
+# @Last Modified time: 2018-03-12 22:11:14
 
 import os
-import shutil
-from calendar import month_abbr as months
 import json
 import numpy as np
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 
@@ -21,58 +20,6 @@ def checkDir(path):
     '''
     if not os.path.exists(path):
         os.makedirs(path)
-
-
-def get_spot(row, col, file_dict, new_dir):
-    '''
-    '''
-    total_ = 0
-    stats = {}
-    new_path = os.path.join(new_dir, str(row) + '_' + str(col))
-    checkDir(new_path)
-    for month in file_dict.keys():
-        stats[month] = {}
-        month_ = 0
-        for day in file_dict[month].keys():
-            files = file_dict[month][day]
-            for f in files:
-                fName = f.split('/')[-1]
-                row_ = int(fName.split('_')[6])
-                col_ = int(fName.split('_')[7].split('.')[0])
-                if row_ == row and col_ == col:
-                    total_ += 1
-                    month_ += 1
-                    f_tmp = os.path.join(
-                        '/'.join(f.split('/')[:-2]), day, day, fName)
-                    #f_tmp = os.path.join('/media/jmiller/ubuntuStorage/thesis_images/2013', month, day, day, fName)
-                    print(f_tmp)
-                    print(os.path.exists(f_tmp))
-                    shutil.copyfile(f_tmp, os.path.join(new_path, fName))
-        stats[month]['total'] = month_
-    stats['total'] = total_
-
-    largest_month = []
-    m_tmp = 0
-    for month, m_value in stats.items():
-        try:
-            m = int(month)
-            m_total = m_value['total']
-            if m_total == m_tmp:
-                m_tmp = m_total
-                largest_month.append(m)
-            elif m_total > m_tmp:
-                m_tmp = m_total
-                largest_month = [m]
-            else:
-                continue
-        except BaseException:
-            continue
-
-    print('{0} total images found.'.format(total_))
-    for m in largest_month:
-        print(
-            'Month with the most images: {0} with {1} images'.format(
-                months[m], m_tmp))
 
 
 def getLatLon(row, col):
@@ -121,18 +68,45 @@ def withinArea(lat, lon, bounds):
     return False
 
 
+def getSeasonTotals(dic):
+    '''
+    
+    '''
+    from calendar import month_abbr as months
+
+    season_dict = {'Winter': [1, 2, 3],
+                   'Spring': [4, 5, 6],
+                   'Summer': [7, 8, 9],
+                   'Fall': [10, 11, 12]}
+    # Loop through each year
+    for year, values in dic.items():
+        seasons = dict()
+        # Get the totals for each season
+        for season, inds in season_dict.items():
+            # Create a blank matrix of the approptiate size
+            m = np.zeros(dic[year][year].shape)
+            # Get the totals for the season
+            for ind in inds:
+                m += values[months[ind]]
+            seasons[season] = m
+        # store the totals in the dict that was provided
+        for season, value in seasons.items():
+            dic[year][season] = value 
+    return dic        
+    
+
 def getMatrix(dic,
               bounds,
               size=None):
     '''
     bounds: list of the bounds of the map. In the format [n, s, e, w]
     '''
+    from calendar import month_abbr as months
     
     if size is None:
         width = (bounds[2] - bounds[3]) / 9.
         height = (bounds[0] - bounds[1]) / 9.
         size = (int(height), int(width))
-    
     
     matrixDict = dict()
     year=None
@@ -162,38 +136,84 @@ def getMatrix(dic,
     return matrixDict
 
 
-def plotMatrix(matrix, bounds, month, year, ):
+def plotMatrix(matrix, bounds, year, month=None, season=None ):
     '''
+    If season and month are provided at the same time, nothing will be plotted
     '''
-    print(matrix.max())
-    print(np.where(matrix >= 12)[0].shape)
+    # Helps with colorbar
     from mpl_toolkits.axes_grid1 import make_axes_locatable
+    
+    if season and month:
+        print("Please only provide a season OR a month. Not both")
+        return 
     
     lats = np.flip(np.arange(bounds[1], bounds[0] + 9.0, 9.), axis=0)
     lons = np.arange(bounds[3], bounds[2] + 9.0, 9.)
 
-    fig = plt.figure()#figsize=(10, 8))
+    fig = plt.figure(figsize=(16, 7))
     ax = fig.add_subplot(111)
     m = Basemap(projection='cyl',
                  llcrnrlon=bounds[3], llcrnrlat=bounds[1],
                  urcrnrlon=bounds[2], urcrnrlat=bounds[0],
                  resolution='l', ax=ax)
     xs, ys = m(lons, lats)
+    if matrix.max() <= 1.:
+        vmax = 1.0
+    else:
+        vmax = matrix.max()
     im = ax.pcolormesh(xs, ys, matrix, alpha=0.8,
-                       antialiased=True, vmin=0, vmax=1, cmap='jet')
+                       antialiased=True, vmin=0, vmax=vmax, cmap='jet')
     m.drawcoastlines()
-    m.drawmeridians(lons, labels=[True, False, False, True])
-    m.drawparallels(lats, labels=[True, False, False, True])
+    # Re-calculate the lats and lons so only every other lon is shown
+    lats = np.flip(np.arange(bounds[1], bounds[0] + 9.0, 9.), axis=0)
+    lons = np.arange(bounds[3], bounds[2] + 18.0, 18.)
+    
+    m.drawmeridians(lons, labels=[False, False, False, True], fontsize=12)
+    m.drawparallels(lats, labels=[True, False, False, False], fontsize=12)
+    
+    # Set up color bar
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
-    fig.colorbar(im, cax=cax, orientation='vertical')
-    #plt.tight_layout()
-    fig.suptitle('Transverse Band Occurence {0}'.format(year), size=22)
-    plot_dir = os.path.join('../heatmaps/localized_views/w_pacific/')
+    cbar = fig.colorbar(im, cax=cax, orientation='vertical')
+    cbar.ax.tick_params(labelsize=14)
+
+    # Set up titles and file names depending on year and month/season
+    # This also accounts for average plots
+    if year == 'average':
+        if month:
+            title = 'Transverse Band Occurence {0} 3 Year Average'.format(month)
+            fileName = 'heatmap_{0}_{1}.png'.format(month, year)
+            path = '../heatmaps/climo/{0}/{1}'.format(year, 'months')
+        elif season:
+            title = 'Transverse Band Occurence {0} 3 Year Average'.format(season)
+            fileName = 'heatmap_{0}_{1}.png'.format(season, year)
+            path = '../heatmaps/climo/{0}/{1}'.format(year, 'seasons')
+        elif not season and not month:
+            title = 'Transverse Band Occurence 3 Year Average'
+            fileName = 'heatmap_{0}.png'.format(year)
+            path = '../heatmaps/climo/{0}'.format(year)
+    else:
+        if month:
+            title = 'Transverse Band Occurence {0} {1}'.format(month, year)
+            fileName = 'heatmap_{0}_{1}.png'.format(month, year)
+            path = '../heatmaps/climo/{0}/{1}'.format(year, 'months')
+        elif season:
+            title = 'Transverse Band Occurence {0} {1}'.format(season, year)
+            fileName = 'heatmap_{0}_{1}.png'.format(season, year)
+            path = '../heatmaps/climo/{0}/{1}'.format(year, 'seasons')
+        elif not season and not month:
+            title = 'Transverse Band Occurence {0}'.format(year)
+            fileName = 'heatmap_{0}.png'.format(year)
+            path = '../heatmaps/climo/{0}'.format(year)
+    
+    fig.suptitle(title, size=22)
+    plot_dir = os.path.join(path)
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
         
-    plt.savefig(os.path.join(plot_dir, 'heatmap_{0}.png'.format(year)), dpi=200)
+    plt.savefig(os.path.join(plot_dir, fileName),
+                dpi=200,
+                bbox_inches='tight')
     plt.clf()
     plt.cla()
     plt.close()
@@ -262,30 +282,25 @@ def plotMultipleMatrix(matrix_dict, bounds):
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cbar3 = fig.colorbar(im, cax=cax, orientation='vertical')
     cbar3.set_label(fontsize=small_text_size)
-
-
-
+    
     plt.tight_layout()
 
-    plot_dir = os.path.join('../heatmaps/localized_views/w_pacific/')
+    plot_dir = os.path.join('../heatmaps/localized_views/test/')
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
-    plt.savefig(os.path.join(plot_dir, 'three_year.png'), bbox_inches='tight', dpi=200)
+    plt.savefig(os.path.join(plot_dir, 'three_year{0}.png'.format(year)), bbox_inches='tight', dpi=200)
     plt.clf()
     plt.cla()
     plt.close()
 
 def main():
     '''
-        season_dict = {
-        'winter': [1, 2, 3],
-        'spring': [4, 5, 6],
-        'summer': [7, 8, 9],
-        'fall': [10, 11, 12]}
+
     '''
+    from calendar import month_abbr as months
+    from calendar import month_name
     years = ['2013', '2014', '2015']
-    max_ = [45, 72, 80]
-    bounds=[27, -27, 171, 108]
+    bounds=[90, -90, 180, -180]
     multi_matrix = {}
     for ind, year in enumerate(years):
         print(year)
@@ -293,9 +308,45 @@ def main():
         with open(json_path, 'r') as j:
             file_dict = json.load(j)
         matrix_dict = getMatrix(file_dict, bounds)
-        multi_matrix[year] = matrix_dict[year]
-        plotMatrix(matrix_dict[year] / max_[ind], bounds, month=None, year=year)
-    plotMultipleMatrix(multi_matrix, bounds)
+        multi_matrix[year] = matrix_dict
+        plotMatrix(matrix_dict[year], bounds, month=None, year=year)
+
+    # Get the avreage over the three years
+    average = np.zeros(multi_matrix['2013']['2013'].shape)
+    for year in years:
+        average += multi_matrix[year][year]
+    average /= float(len(years))
+    plotMatrix(average, bounds, year='average')
+
+    # Plot the season totals for each year.
+    multi_matrix = getSeasonTotals(multi_matrix)
+    seasons = ['Winter', 'Spring', 'Summer', 'Fall']    
+    for year in years:
+        for season in seasons:
+            plotMatrix(multi_matrix[year][season], bounds, year, season=season)
+            
+    # Plot the Season averages
+    for season in seasons:
+        average = np.zeros(multi_matrix['2013']['2013'].shape)
+        for year in years:
+            average += multi_matrix[year][season]
+        average /= float(len(years))
+        plotMatrix(average, bounds, year='average', season=season)
+    
+    # Plot the monthly totals for each year.  
+    for year in years:
+        for ind in range(1,13):
+            month = months[ind]
+            plotMatrix(multi_matrix[year][month], bounds, year, month=month_name[ind])
+
+    # Plot the monthly averages
+    for ind in range(1, 13):
+        month = months[ind]
+        average = np.zeros(multi_matrix['2013']['2013'].shape)
+        for year in years:
+            average += multi_matrix[year][month]
+        average /= float(len(years))
+        plotMatrix(average, bounds, year='average', month=month_name[ind])
     
 if __name__ == "__main__":
     main()
