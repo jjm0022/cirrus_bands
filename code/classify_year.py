@@ -2,14 +2,14 @@
 # @Author: jmiller
 # @Date:   2017-05-04 09:25:39
 # @Last Modified by:   jmiller
-# @Last Modified time: 2017-05-04 11:15:10
+# @Last Modified time: 2018-03-19 20:28:37
 
 import numpy as np
-#import re
 import os
 from PIL import Image
 from glob import glob
 from keras.models import model_from_json
+from keras import metrics
 from keras.preprocessing.image import ImageDataGenerator
 from img_iterator import Img_Iterator
 from img_iterator import factor
@@ -52,7 +52,7 @@ def classify(model,
     copy: Boolean. If True, it will copy bands images to the destination directory.
     '''
 
-    datagen = ImageDataGenerator(rescale=1 / 255.)
+    datagen = ImageDataGenerator()
     gen = datagen.flow_from_directory(
         directory=directory,
         target_size=(256, 256),
@@ -71,7 +71,7 @@ def classify(model,
     bar = progressbar.ProgressBar(
         redirect_stdout=True,
         max_value=(
-            gen.N / gen.batch_size),
+            gen.n / gen.batch_size),
         widgets=[
             progressbar.Percentage(),
             ' ',
@@ -94,7 +94,7 @@ def classify(model,
             if pred[0] == 0:
                 band_files.append(images[ind])
             ind += 1
-            if ind >= gen.N:
+            if ind >= gen.n:
                 done = True
                 break
         if done:
@@ -103,57 +103,6 @@ def classify(model,
         i += 1
     print('Images found: {0}'.format(len(band_files)))
     return band_files
-
-    '''
-    month = images.split('/')[-2]
-    day = images.split('/')[-1]
-    batchSize = factor(len(images))
-
-    gen = Img_Iterator()
-    stream = gen.flow_from_directory(images, batch_size=batchSize)
-    i = 0
-    j = []
-    # Number of times the classifier will be run
-    stop = int(stream.N / stream.batch_size)
-    predictions = []
-    band_files = []
-    bar = progressbar.ProgressBar(redirect_stdout=True, max_value=stop,
-    		widgets=[
-    			progressbar.Percentage(), ' ',
-    			'(', progressbar.SimpleProgress(), ')',
-    			' Batch Size: {0}'.format(stream.batch_size),
-    			progressbar.Bar(),
-    			'Month: {0} '.format(month),
-    			'Day: {0} '.format(day),
-    			progressbar.ETA(),
-			])
-    for batch in stream:
-        # Stop if number of batches has been met
-        if i >= stop:
-            break
-        predictions.append(model.predict_classes(batch,
-                                                batch_size=stream.batch_size,
-                                                verbose=0))
-        j.append(stream.batch_index)
-        # Index of the first image in current batch
-        begin_index = (stream.batch_index - 1) * stream.batch_size
-        # Index of the last image in the current batch
-        end_index = (stream.batch_index * stream.batch_size)
-        # Files used in current batch
-        files = stream.filenames[begin_index:end_index]
-        if len(files) != len(predictions[i]):
-            print("Number of files and predictions do not match")
-            print len('Number of Files: {0}'.format(files))
-            print len('Number of Predictions: {0}'.format(predictions[i]))
-            break
-        for pred, fname in zip(predictions[i], files):
-            if pred == 0:
-                band_files.append(os.path.join(images, fname))
-        bar.update(i)
-        i += 1
-    print('Images found: {0}'.format(len(band_files)))
-    return band_files
-    '''
 
 
 def write2txt(bandPaths):
@@ -175,10 +124,9 @@ def main():
     model.load_weights(weights_path)
     model.compile(optimizer='SGD',
                   loss='binary_crossentropy',
-                  metrics=['accuracy'])
-    base_dir = '/media/jmiller/ubuntuStorage/thesis_images/2015'
+                  metrics=[metrics.binary_accuracy])
+    base_dir = '/media/jmiller/ubuntuStorage/thesis_images/2013_TERRA'
 
-    datagen = ImageDataGenerator(rescale=1 / 255.)
 
     predictions = {}
     for month in sorted(os.listdir(base_dir)):
@@ -187,9 +135,8 @@ def main():
         for day in sorted(os.listdir(month_dir)):
             day_dir = os.path.join(month_dir, day)
             predictions[month][day] = classify(model, day_dir)
-        # write2txt(predictions)
 
-    with open('./predicted_bands_2014_.json', 'w') as j:
+    with open('./predicted_bands_2013.json', 'w') as j:
         json.dump(predictions, j, indent=2, sort_keys=True)
 
 

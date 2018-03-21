@@ -2,15 +2,38 @@
 # @Author: jmiller
 # @Date:   2017-05-02 09:34:56
 # @Last Modified by:   jmiller
-# @Last Modified time: 2017-05-02 11:13:41
+# @Last Modified time: 2018-03-19 18:19:24
 
 
 import os
-from glob import glob
 from PIL import Image
-import multiprocessing
-from multiprocessing import Pool
-from multiprocessing.dummy import Pool as ThreadPool
+import threading
+from queue import Queue
+import logging
+
+
+class Checker(threading.Thread):
+    def __init__(self, queue):
+        super(Checker, self).__init__()
+        self.queue = queue
+        self.total_bad_images = 0
+        self.months = list()
+
+    def run(self):
+        while True:
+            img = self.queue.get()
+            if not os.path.exists(img):
+                print('Does not exist: {0}'.format(img))
+            month = img.split('/')[6]
+            if month not in self.months:
+                print(month)
+                self.months.append(month)
+            try:
+                result = checkBlackSpace(img)
+                self.total_bad_images += move(result)
+            except Exception as e:
+                logging.warn(e)
+            self.queue.task_done()
 
 
 def checkDir(path):
@@ -29,22 +52,11 @@ def move(result):
         day = result[0].split('/')[7]
         year = result[0].split('/')[5]
         img = result[0].split('/')[-1]
-        # print(img)
+        checkDir(os.path.join(new_location, year, month, day))
         os.rename(result[0], os.path.join(new_location, year, month, day, img))
         return 1
     else:
         return 0
-
-
-def dummy(imgList):
-    '''
-    '''
-    p = ThreadPool(processes=multiprocessing.cpu_count())
-    results = p.map(checkBlackSpace, imgList, chunksize=10)
-    nums = p.map(move, results)
-    num = sum(nums)
-    p.close()
-    return num
 
 
 def checkBlackSpace(img):
@@ -73,21 +85,27 @@ def checkBlackSpace(img):
 def main():
     '''
     '''
-    workingDir = '/media/jmiller/ubuntuStorage/thesis_images/2015'
+    q = Queue()
+    threads = list()
+    num_threads = 10
+
+    for i in range(num_threads):
+        threads.append(Checker(q))
+        threads[-1].start()
+
+    workingDir = '/media/jmiller/ubuntuStorage/thesis_images/2013_TERRA'
     new_location = '/media/jmiller/ubuntuStorage/thesis_images/bad_images'
-    year = str(2015)
+    year = str(2013)
     months = sorted(os.listdir(workingDir))
     for month in months:
-        print('Month: {0}'.format(month))
         monthsDir = os.path.join(workingDir, month)
         days = sorted(os.listdir(monthsDir))
         for day in days:
-            print('\tDay: {0}\r'.format(day))
             checkDir(os.path.join(new_location, year, month, day))
-            dayDir = os.path.join(monthsDir, day)
-            img_list = glob(dayDir + '/*')
-            num = dummy(img_list)
-            print('\t{0} images moved in {1}'.format(num, day))
+            dayDir = os.path.join(monthsDir, day, day)
+            for img in os.listdir(dayDir):
+                img_path = os.path.join(dayDir, img)
+                q.put(img_path)
 
 
 if __name__ == '__main__':

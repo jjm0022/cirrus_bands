@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: jmiller
 # @Date:   2018-02-26 19:40:51
-# @Last Modified by:   jmiller
-# @Last Modified time: 2018-03-12 22:11:14
+# @Last Modified by:   J.J. Miller
+# @Last Modified time: 2018-03-20 14:28:23
 
 import os
 import json
@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
+from plot_heatmaps import Plot
 
 matplotlib.rcParams.update({'font.family': 'Times New Roman'})
 
@@ -218,81 +219,6 @@ def plotMatrix(matrix, bounds, year, month=None, season=None ):
     plt.cla()
     plt.close()
 
-
-def plotMultipleMatrix(matrix_dict, bounds):
-    '''
-    '''
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-    lats = np.flip(np.arange(bounds[1], bounds[0] + 9.0, 9.), axis=0)
-    lons = np.arange(bounds[3], bounds[2] + 9.0, 9.)
-    fig = plt.figure(figsize=(6,16)) #subplots(nrows=3, ncols=1, sharex=True, sharey=True)
-    
-    #plt.gcf().set_size_inches(10, 8)
-    ax1 = fig.add_subplot(311)
-    m1 = Basemap(projection='cyl',
-                 llcrnrlon=bounds[3], llcrnrlat=bounds[1],
-                 urcrnrlon=bounds[2], urcrnrlat=bounds[0],
-                 resolution='l', ax=ax1)
-    xs, ys = m1(lons, lats)
-    
-    title_size = 22
-    small_text_size = 14
-    im = ax1.pcolormesh(xs, ys, matrix_dict['2013'] / 45., alpha=0.8,
-                            antialiased=True, vmin=0, vmax=1, cmap='jet')
-    m1.drawcoastlines()
-    m1.drawmeridians(lons)
-    m1.drawparallels(lats, labels=[True, False, False, True], size=small_text_size)
-    ax1.set_title('2013', size=title_size, fontname='Times New Roman')
-    ax1.axis('off')
-    divider = make_axes_locatable(ax1)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    cbar1 = fig.colorbar(im, cax=cax, orientation='vertical', fontsize=small_text_size)
-    cbar1.set_label(fontsize=small_text_size)
-    
-    ax2 = fig.add_subplot(312)
-    m2 = Basemap(projection='cyl',
-                 llcrnrlon=lons[0], llcrnrlat=lats[-1],
-                 urcrnrlon=lons[-1], urcrnrlat=lats[0],
-                 resolution='l', ax=ax2)
-    im = ax2.pcolormesh(xs, ys, matrix_dict['2014'] / 72., alpha=0.8,
-             antialiased=True, vmin=0, vmax=1, cmap='jet')
-    m2.drawcoastlines()
-    m2.drawmeridians(lons)
-    m2.drawparallels(lats, labels=[True, False, False, True], size=small_text_size)
-    ax2.set_title('2014', size=title_size, fontname='Times New Roman')
-    ax2.axis('off')
-    divider = make_axes_locatable(ax2)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    cbar2 = fig.colorbar(im, cax=cax, orientation='vertical')
-    cbar2.set_label(fontsize=small_text_size)
-
-    ax3 = fig.add_subplot(313)
-    m3 = Basemap(projection='cyl',
-                 llcrnrlon=lons[0], llcrnrlat=lats[-1],
-                 urcrnrlon=lons[-1], urcrnrlat=lats[0],
-                 resolution='l', ax=ax3)
-    im = ax3.pcolormesh(xs, ys, matrix_dict['2015'] / 80., alpha=0.8,
-             antialiased=True, vmin=0, vmax=1, cmap='jet')
-    m3.drawcoastlines()
-    m3.drawmeridians(lons, labels=[True, False, False, True], size=small_text_size)
-    m3.drawparallels(lats, labels=[True, False, False, True], size=small_text_size)
-    ax3.set_title('2015', size=title_size, fontname='Times New Roman')
-    ax3.axis('off')
-    divider = make_axes_locatable(ax3)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    cbar3 = fig.colorbar(im, cax=cax, orientation='vertical')
-    cbar3.set_label(fontsize=small_text_size)
-    
-    plt.tight_layout()
-
-    plot_dir = os.path.join('../heatmaps/localized_views/test/')
-    if not os.path.exists(plot_dir):
-        os.makedirs(plot_dir)
-    plt.savefig(os.path.join(plot_dir, 'three_year{0}.png'.format(year)), bbox_inches='tight', dpi=200)
-    plt.clf()
-    plt.cla()
-    plt.close()
-
 def main():
     '''
 
@@ -318,7 +244,7 @@ def main():
     average /= float(len(years))
     plotMatrix(average, bounds, year='average')
 
-    # Plot the season totals for each year.
+    ## Plot the season totals for each year.
     multi_matrix = getSeasonTotals(multi_matrix)
     seasons = ['Winter', 'Spring', 'Summer', 'Fall']    
     for year in years:
@@ -331,7 +257,9 @@ def main():
         for year in years:
             average += multi_matrix[year][season]
         average /= float(len(years))
-        plotMatrix(average, bounds, year='average', season=season)
+        multi_matrix[season] = average
+    plot = Plot(bounds, (2,3))
+    plot.plot_multi(multi_matrix)
     
     # Plot the monthly totals for each year.  
     for year in years:
